@@ -1,0 +1,29 @@
+This Python scheduling system is designed to manage and optimize schedules for
+educational institutions. It utilizes classes like Professor, Classroom, and Course
+to model the scheduling problem. The system supports input parsing, schedule validation,
+and implements search algorithms for optimization.
+
+System Components
+Professor: Holds preferences and associated courses for a professor.
+Classroom: Manages the capacity and allowed classes for a classroom.
+Course: Represents a course with a defined student count.
+ScheduleData: Aggregates all scheduling data including lists of professors,
+classrooms, courses, time intervals, and days.
+Schedule: Main class to handle scheduling operations like creating initial states,
+validating schedules, and generating successors.
+
+
+Algorithms
+Two primary algorithms are implemented:
+
+Hill Climbing Algorithm: Used for finding local optimums (uses a random initial state where
+only hard constraints are checked in order to create it fast.)
+A Algorithm*: Utilizes a heuristic to find the most efficient path to a valid schedule.
+
+When creating a schedule, first thing is initializing schedule.days field
+which will contain a dictionary of days containing dictionaries of intervals
+containing dictionaries of classrooms with (professor, course) tuples.
+
+When initializing first state, only hard constraints are checked and
+intervals, days and professors are chosen randomly based only on those
+constraints.

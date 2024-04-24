@@ -26,4 +26,9 @@ containing dictionaries of classrooms with (professor, course) tuples.
 
 When initializing first state, only hard constraints are checked and
 intervals, days and professors are chosen randomly based only on those
-constraints.
+constraints. This way all hard constraints are checked at the beginning of
+the problem and afterwards only soft constraints must be checked when
+switching slots and professors.
+
+When generating successors for hill climbing algorithm, there is set
+a random number of states to generate.

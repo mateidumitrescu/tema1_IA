@@ -98,7 +98,9 @@ class Schedule:
             
             professor = random.choice(available_professors)
             
+            # checking if the course can be assigned to the classroom
             if self.can_assign_course(course, day, interval, classroom):
+                # assigning the course to the classroom and professor
                 self.assign_course(course, day, interval, classroom, professor)
                 assigned = True
                 print("Assigned course: ", course, " to classroom: ", classroom[0], " on day: ", day, " at interval: ", interval, " with professor: ", professor)
@@ -121,6 +123,7 @@ class Schedule:
         
         # checking if classroom is already assigned in this slot
         if self.days[day][interval][classroom[0]] is not None:
+            print("Classroom already assigned in this slot: ", day, " ", interval, " ", classroom[0])
             return False
         
         # all hard constraints checked, returning True
@@ -148,11 +151,6 @@ class Schedule:
             self.schedule_data.classrooms[classroom[0]].slot_reached_students[day][interval] = self.students_left[course]
             self.students_left[course] = 0
         
-        
-    def is_valid(self):
-        """Checks if the schedule is valid"""
-        
-        pass
     
     def successors(self):
         """Generates the successors of the current state"""
@@ -162,13 +160,56 @@ class Schedule:
         """Heuristic function for A* algorithm"""
         pass
 
-def hill_climbing_algorithm(schedule_data: ScheduleData):
-    schedule = Schedule(schedule_data)
-    schedule.create_initial_state()
-    print(pretty_print_timetable(schedule.days, input_file))
+def cost(schedule: Schedule):
+    """Calculates the cost of the current state based on soft constraints"""
+    cost = 0
+    
+    return cost
+        
+def hill_climbing(initial_state: Schedule, max_iters = 1000):
+    """Hill climbing algorithm used in random restart hill climbing algorithm"""
+    iters = 0
+    current_state = initial_state
+    current_state_cost = float('inf')
+    while iters < max_iters:
+        successors = current_state.successors()
+        best_state = current_state
+        for successor in successors:
+            if cost(successor) < cost(best_state):
+                best_state = successor
+        
+        if best_state == current_state:
+            iters += 1
+            break
+        current_state = best_state
+        current_state_cost = cost(best_state)
+        iters += 1
+    
+    return current_state, current_state_cost, iters # return the best state found, its cost and the number of iterations
+
+def random_restart_hill_climbing(schedule_data: ScheduleData, max_restarts: int = 300, max_iterations: int = 1000):
+    """Random restart hill climbing algorithm"""
+    total_iters = 0
+    best_state = None
+    best_cost = float('inf')
+    initial_state = Schedule(schedule_data)
+    
+    for _ in range(max_iterations):
+        initial_state.create_initial_state() # creating a random initial state
+        state, cost, iters = hill_climbing(initial_state, max_iterations) # running hill climbing algorithm
+        total_iters += iters # storing the total number of iterations
+        
+        if cost < best_cost: # the best state found so far
+            best_state = state
+            best_cost = cost
+            if cost == 0:
+                break
+    
+    return best_state, best_cost, total_iters
+    
     
 
-def astar_algorithm(schedule_data: ScheduleData):
+def astar(schedule_data: ScheduleData):
     pass
 
 def parse_input_file(input_file: str):
@@ -209,8 +250,11 @@ if __name__ == '__main__':
 
     # check arguments
     if algo == 'astar':
-        astar_algorithm(schedule_data)
+        astar(schedule_data)
     elif algo == 'hc':
-        hill_climbing_algorithm(schedule_data)
+        schedule, cost, total_iters = random_restart_hill_climbing(schedule_data)
+        pretty_print_timetable(schedule.days, input_file)
+        print("Final cost: ", cost)
+        print("Total iterations: ", total_iters)
 
     

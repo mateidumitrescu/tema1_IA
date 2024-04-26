@@ -36,3 +36,6 @@ successors.
 
 When generating successors for hill climbing algorithm, there is set
 a random number of states to generate.
+
+
+TODO de verificat functiile de try to assign students, deoarece verific in ambele functii daca sala nu e goala

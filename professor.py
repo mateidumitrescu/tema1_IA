@@ -27,3 +27,15 @@ class Professor:
                 # day prefs
                 refactored_preferences.append(pref)
         self.preferences = refactored_preferences
+    
+    def increment_nr_teaching_intervals(self):
+        """Increments the number of teaching intervals"""
+        self.nr_teaching_intervals += 1
+        if self.nr_teaching_intervals == 7:
+            self.already_assigned = True
+    
+    def decrement_nr_teaching_intervals(self):
+        """Decrements the number of teaching intervals"""
+        self.nr_teaching_intervals -= 1
+        if self.nr_teaching_intervals < 7:
+            self.already_assigned = False

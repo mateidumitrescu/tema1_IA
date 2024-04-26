@@ -78,13 +78,20 @@ class Schedule:
         for day in self.days:
             self.days[day] = dict(sorted(self.days[day].items()))
         
-        #print("Initial state created.")
+        if not self.is_valid():
+            self.create_initial_state()
     
     def try_assign_left_students(self, course: str):
         """Assigns a course randomly to a classroom and interval"""
-        random_professor = random.choice(list(professor for professor in self.schedule_data.professors.keys()\
+        available_professors = list(professor for professor in self.schedule_data.professors.keys()\
             if course in self.schedule_data.professors[professor].courses and\
-            not self.schedule_data.professors[professor].already_assigned))
+            not self.schedule_data.professors[professor].already_assigned)
+        
+        if len(available_professors) == 0:
+            self.create_initial_state()
+            return
+        
+        random_professor = random.choice(available_professors)
         
         
         # first trying to assign the course to an empty slot
@@ -127,6 +134,10 @@ class Schedule:
             available_professors = [professor for professor in self.schedule_data.professors
                     if course in self.schedule_data.professors[professor].courses
                     and not self.schedule_data.professors[professor].already_assigned]
+            if len(available_professors) == 0:
+                self.create_initial_state()
+                return
+
             professor = random.choice(available_professors)
             day_preferences = [pref for pref in self.schedule_data.professors[professor].preferences if pref in self.schedule_data.days]
             interval_preferences = [pref for pref in self.schedule_data.professors[professor].preferences if pref in self.schedule_data.intervals]
@@ -163,16 +174,7 @@ class Schedule:
                         break
                 if assigned:
                     break
-            
-            
-            
-            # if not can_assign_course and not self.already_teaching(professor, day, interval)\
-            #     and reason == 'Classroom is full.'\
-            #         or reason == 'Classroom already assigned in this slot.':
-            #     # reassigning the professor to this course
-            #     reassigned_professor = self.try_to_assign_professor(professor, day, interval, classroom, course)
-            #     if professor_to_reassign:
-            #         self.schedule_data.professors[professor_to_reassign].decrement_nr_teaching_intervals()
+
             attempt += 1
         return assigned
     
@@ -286,23 +288,39 @@ class Schedule:
                     slots[(day, interval)] = True
         return slots
     
-    def try_assign_left_students_empty_slots(self, course: str, left_students: int):
+    def try_assign_left_students_non_empty_slots(self, course: str, left_students: int):
         """Tries to assign the rest of the students to a course and returns False if couldnt assign all students"""
+        
         for day in self.days:
             for interval in self.days[day]:
+                # getting a random professor that can teach the course
+                available_professors = list(professor for professor in self.schedule_data.professors.keys()\
+                if course in self.schedule_data.professors[professor].courses and\
+                not self.schedule_data.professors[professor].already_assigned)
+
+                if len(available_professors) == 0:
+                    return False
+                random_professor = random.choice(available_professors)
+                
                 for classroom in self.days[day][interval]:
-                    if self.days[day][interval][classroom] is not None and\
-                        self.schedule_data.classrooms[classroom].slot_reached_students[day][interval] < self.schedule_data.classrooms[classroom].capacity\
-                        and course in self.schedule_data.classrooms[classroom].classes_allowed:
+                    
+                    if self.days[day][interval][classroom] is None and\
+                        course in self.schedule_data.classrooms[classroom].classes_allowed:
                         # assigning the rest of the students to the course not reaching the capacity
                         empty_spots = self.schedule_data.classrooms[classroom].capacity - self.schedule_data.classrooms[classroom].slot_reached_students[day][interval]
                         if empty_spots >= left_students:
+                            self.days[day][interval][classroom] = (random_professor, course)
+                            self.schedule_data.professors[random_professor].increment_nr_teaching_intervals()
                             self.schedule_data.classrooms[classroom].slot_reached_students[day][interval] += left_students
                             left_students = 0
                             return True
                         else:
+                            self.days[day][interval][classroom] = (random_professor, course)
+                            self.schedule_data.professors[random_professor].increment_nr_teaching_intervals()
                             self.schedule_data.classrooms[classroom].slot_reached_students[day][interval] += empty_spots
                             left_students -= empty_spots
+                    if left_students == 0:
+                        return True
         return False
 
     def try_to_assign_left_students(self, course: str, number_of_students: int):
@@ -322,6 +340,7 @@ class Schedule:
                             number_of_students -= empty_spots
         
         return False
+
         
     
     def try_to_assign_professor(self, professor: str, available_slots: dict, course: str, old_day: str, old_interval: tuple, old_classroom: str):

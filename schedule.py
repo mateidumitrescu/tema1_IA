@@ -1,7 +1,7 @@
 import random
 from schedule_data import ScheduleData
 import copy
-from check_constraints import check_mandatory_constraints
+from check_constraints import check_mandatory_constraints, check_optional_constraints
 from professor import Professor
 
 class Schedule:
@@ -19,6 +19,18 @@ class Schedule:
         self.violated_constraints = {prof: [] for prof in schedule_data.professors}
         # dictionary of days and intervals
         self.days = {}
+    
+    def __lt__(self, other):
+        return self.heuristic() < other.heuristic()
+    
+    def __eq__(self, other):
+        return self.days == other.days
+    
+    def __hash__(self):
+        return hash(str(self.days))
+    
+    def state_hash(self):
+        return str(self.days)
         
     def add_violated_constraint(self, professor: str, day: str, interval: tuple):
         """Adds a violated constraint to the dictionary"""
@@ -437,6 +449,85 @@ class Schedule:
 
         return successors
     
-    def astar_heuristic():
-        """Heuristic function for A* algorithm"""
-        pass
+        
+    
+    def heuristic(self):
+        """Estimate of the cost to reach a goal state from the current state."""
+        cost = 0
+        # Evaluate the number of violated preferences for each professor
+        for professor in self.schedule_data.professors:
+            preferences = self.schedule_data.professors[professor].preferences
+            for day in self.days:
+                for interval in self.days[day]:
+                    for classroom, assigned in self.days[day][interval].items():
+                        if assigned and assigned[0] == professor:
+                            # Check if the day is a preferred day
+                            if day not in preferences:
+                                self.add_violated_constraint(professor, day, None)
+                                cost += 1
+                            # Check if the interval is a preferred interval
+                            if interval not in preferences:
+                                self.add_violated_constraint(professor, None, interval)
+                                cost += 1
+                            # Additional cost for each student that could not be accommodated in their preferred slot
+                            remaining_students = self.students_left.get(assigned[1], 0)
+                            if remaining_students > 0:
+                                cost += remaining_students
+        return cost
+    
+    def is_goal(self):
+        """Checks if state is goal state"""
+        return check_mandatory_constraints(self.days, self.specs) == 0 and check_optional_constraints(self.days, self.specs) == 0
+    
+   
+    def transition_cost(self, successor):
+        """
+        Computes the cost of transitioning from the current state to a successor state.
+        The cost is based on changes to the assignment of professors to courses and classrooms, 
+        as well as maintaining alignment with professor preferences.
+
+        Args:
+        - successor (Schedule): The successor state for comparison.
+
+        Returns:
+        - int: The calculated transition cost.
+        """
+        cost = 0
+        change_penalty = 10  # Penalize each change to encourage stability
+
+        # Compare each day and interval's assignments between the current state and the successor
+        for day in self.days:
+            for interval in self.days[day]:
+                for classroom in self.days[day][interval]:
+                    current_assignment = self.days[day][interval].get(classroom)
+                    successor_assignment = successor.days[day][interval].get(classroom)
+
+                    # If assignments are not the same, apply a penalty
+                    if current_assignment != successor_assignment:
+                        cost += change_penalty
+
+                        # Further analysis could be added here, such as penalizing based on professor preferences
+                        if successor_assignment:
+                            professor, course = successor_assignment
+                            # Apply a higher cost if the assignment violates the professor's preferences
+                            if not self.meets_professor_preferences(professor, day, interval):
+                                cost += 5  # Adjust this value based on how strict you want to enforce preferences
+
+        # This basic implementation can be extended to include more sophisticated cost analyses
+        return cost
+
+    def meets_professor_preferences(self, professor, day, interval):
+        """
+        Determine if a given time slot meets the specified professor's preferences.
+
+        Args:
+        - professor (str): The professor's identifier.
+        - day (str): The day of the week.
+        - interval (tuple): The time interval.
+
+        Returns:
+        - bool: True if the slot meets the preferences, False otherwise.
+        """
+        # Assuming preferences are stored in a dictionary format or similar
+        preferences = self.schedule_data.professors[professor].preferences
+        return (day, interval) in preferences

@@ -5,8 +5,7 @@ import sys
 
 class HillClimbing:
 
-    @staticmethod
-    def calculate_cost(schedule: Schedule):
+    def __calculate_cost(schedule: Schedule):
         """Calculates the cost of the current state based on soft constraints"""
         cost = 0
         for day in schedule.days:
@@ -26,19 +25,18 @@ class HillClimbing:
         #print("Violated constraints: ", schedule.violated_constraints)               
         return cost
     
-    @staticmethod
-    def hill_climbing(initial_state: Schedule, input_file: str, max_iters = 1000):
+    def __hill_climbing(initial_state: Schedule, input_file: str, max_iters = 1000):
         """Hill climbing algorithm used in random restart hill climbing algorithm"""
         iters = 0
         current_state = initial_state
         current_state_cost = sys.maxsize
         while iters < max_iters:
-            current_state_cost = HillClimbing.calculate_cost(current_state)
+            current_state_cost = HillClimbing.__calculate_cost(current_state)
             successors = current_state.successors()
             best_state = current_state
             for successor in successors:
             
-                successor_cost = HillClimbing.calculate_cost(successor)
+                successor_cost = HillClimbing.__calculate_cost(successor)
                 if successor_cost < current_state_cost:
                     best_state = successor
 
@@ -73,7 +71,7 @@ class HillClimbing:
 
             initial_state.create_initial_state() # creating a random initial state
             
-            state, cost, iters = HillClimbing.hill_climbing(initial_state, input_file, max_iterations) # running hill climbing algorithm
+            state, cost, iters = HillClimbing.__hill_climbing(initial_state, input_file, max_iterations) # running hill climbing algorithm
             total_iters += iters # storing the total number of iterations
         
             if cost <= best_cost: # the best state found so far

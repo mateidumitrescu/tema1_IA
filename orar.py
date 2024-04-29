@@ -5,10 +5,9 @@ from schedule_data import ScheduleData
 from professor import Professor
 from classroom import Classroom        
 from hc import HillClimbing
+from astar import AStar
+from check_constraints import check_optional_constraints, check_mandatory_constraints
         
-
-def astar(schedule_data: ScheduleData):
-    pass
 
 def parse_input_file(input_file: str):
     """Parses the input file and returns a Schedule object"""
@@ -50,12 +49,22 @@ if __name__ == '__main__':
     algo = sys.argv[1]
     input_file = sys.argv[2]
 
-    # TODO parse input file
     schedule_data = parse_input_file(input_file)
 
     # check arguments
     if algo == 'astar':
-        astar(schedule_data)
+        initial_state = Schedule(schedule_data)
+        initial_state.create_initial_state()
+        result, best_cost = AStar.algorithm(initial_state, input_file)
+        
+        if len(result) > 0:
+            print(check_optional_constraints(initial_state.days, initial_state.specs))
+            print(check_mandatory_constraints(result[-1].days, initial_state.specs))
+            print(check_optional_constraints(result[-1].days, initial_state.specs))
+            print(pretty_print_timetable(result[-1].days, input_file))
+        else:
+            print("No solution found")
+        
     elif algo == 'hc':
         HillClimbing.random_restart_hill_climbing(input_file=input_file, schedule_data=schedule_data)
         # pretty_print_timetable(schedule.days, input_file)

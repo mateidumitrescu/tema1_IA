@@ -118,19 +118,19 @@ def check_mandatory_constraints(timetable : {str : {(int, int) : {str : (str, st
 
                     # PROFESORUL PREDĂ 2 MATERII ÎN ACELAȘI INTERVAL
                     if prof in profs_in_crt_interval:
-                        print(f'Profesorul {prof} preda 2 materii in acelasi interval!')
+                        #print(f'Profesorul {prof} preda 2 materii in acelasi interval!')
                         constrangeri_incalcate += 1
                     else:
                         profs_in_crt_interval.append(prof)
 
                     # MATERIA NU SE PREDA IN SALA
                     if subject not in timetable_specs[SALI][room][MATERII]:
-                        print(f'Materia {subject} nu se preda în sala {room}!')
+                        #print(f'Materia {subject} nu se preda în sala {room}!')
                         constrangeri_incalcate += 1
 
                     # PROFESORUL NU PREDA MATERIA
                     if subject not in timetable_specs[PROFESORI][prof][MATERII]:
-                        print(f'Profesorul {prof} nu poate preda materia {subject}!')
+                        #print(f'Profesorul {prof} nu poate preda materia {subject}!')
                         constrangeri_incalcate += 1
 
                     ore_profesori[prof] += 1
@@ -138,13 +138,13 @@ def check_mandatory_constraints(timetable : {str : {(int, int) : {str : (str, st
     # CONDITIA DE ACOPERIRE
     for subject in acoperire_target:
         if acoperire_reala[subject] < acoperire_target[subject]:
-            print(f'Materia {subject} nu are acoperirea necesară!')
+            #print(f'Materia {subject} nu are acoperirea necesară!')
             constrangeri_incalcate += 1
 
     # CONDITIA DE MAXIM 7 ORE PE SĂPTĂMÂNĂ
     for prof in ore_profesori:
         if ore_profesori[prof] > 7:
-            print(f'Profesorul {prof} tine mai mult de 7 sloturi!')
+            #print(f'Profesorul {prof} tine mai mult de 7 sloturi!')
             constrangeri_incalcate += 1
 
     return constrangeri_incalcate

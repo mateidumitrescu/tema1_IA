@@ -39,3 +39,13 @@ class Professor:
         self.nr_teaching_intervals -= 1
         if self.nr_teaching_intervals < 7:
             self.already_assigned = False
+    
+    @staticmethod
+    def already_teaching_in_interval(name: str, schedule: dict, day: str, interval: str):
+        """Checks if the professor is already teaching in an interval"""
+        for classroom in schedule[day][interval]:
+            if schedule[day][interval][classroom]:
+                prof = schedule[day][interval][classroom][0]
+                if prof == name:
+                    return True
+        return False

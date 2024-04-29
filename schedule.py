@@ -2,6 +2,7 @@ import random
 from schedule_data import ScheduleData
 import copy
 from check_constraints import check_mandatory_constraints
+from professor import Professor
 
 class Schedule:
     """Schedule class"""
@@ -61,14 +62,12 @@ class Schedule:
         for course in self.students_left:
             # assigning students to courses
             #print("Trying to assign students to course: ", course)
-            attempts = 0
             assigned = False
             while self.students_left[course] > 0:
                 # tryin
                 assigned = self.try_assign_students(course)
                 if not assigned:
                     self.try_assign_left_students(course)
-                attempts += 1
                 
             #print("Assigned all students to course: ", course)
             # after assigning all courses and students, schedule must contain None values for the rest of the slots
@@ -151,7 +150,8 @@ class Schedule:
             else:
                 intervals = random.choices(interval_preferences)
             
-            classrooms = [classroom for classroom in self.schedule_data.classrooms if course in self.schedule_data.classrooms[classroom].classes_allowed]
+            classrooms = [classroom for classroom in self.schedule_data.classrooms\
+                if course in self.schedule_data.classrooms[classroom].classes_allowed]
             
             classrooms = random.choices(classrooms)
             
@@ -163,7 +163,7 @@ class Schedule:
                 for interval in intervals:
                     for classroom in classrooms:
                         can_assign_course, reason = self.can_assign_course(course, day, interval, classroom)
-                        if can_assign_course and not self.already_teaching(professor, day, interval):
+                        if can_assign_course and not Professor.already_teaching_in_interval(professor, self.days, day, interval):
                             # assigning the course to the classroom and professor
                             self.assign_course(course, day, interval, classroom, professor)
                             assigned = True
@@ -178,17 +178,6 @@ class Schedule:
             attempt += 1
         return assigned
     
-    def already_teaching(self, professor: str, day: str, interval: tuple):
-        """Checks if a professor is already teaching in a certain day and interval"""
-        #print(professor, " is professor")
-        for d in self.days:
-            if d == day:
-                for i in self.days[d]:
-                    if str(i) == str(interval):
-                        for data in self.days[d][i].values():
-                            if data is not None and data[0] == professor:
-                                return True
-        return False
         
     def can_assign_course(self, course: str, day: str, interval: tuple, classroom: str):
         """Checks if a course and professor can be assigned to a classroom"""
@@ -288,7 +277,7 @@ class Schedule:
                     slots[(day, interval)] = True
         return slots
     
-    def try_assign_left_students_non_empty_slots(self, course: str, left_students: int):
+    def try_assign_left_students_empty_slots(self, course: str, left_students: int):
         """Tries to assign the rest of the students to a course and returns False if couldnt assign all students"""
         
         for day in self.days:
@@ -349,14 +338,24 @@ class Schedule:
         for slot, available in available_slots.items():
             if available:
                 for classroom in self.days[slot[0]][slot[1]]:
-                    if self.days[slot[0]][slot[1]][classroom] is None and old_classroom == classroom:
+                    if self.days[slot[0]][slot[1]][classroom] is None and old_classroom == classroom\
+                        and not Professor.already_teaching_in_interval(professor, self.days, slot[0], slot[1]):
                         # case when the classroom is the same
                         self.days[slot[0]][slot[1]][classroom] = (professor, course)
                         self.days[old_day][old_interval][old_classroom] = None
                         assigned = True
                         break
-                    elif self.days[slot[0]][slot[1]][classroom] is None and old_classroom != classroom\
-                        and classroom in self.schedule_data.classrooms[classroom].classes_allowed:
+                if assigned:
+                    break
+            if assigned:
+                break
+        
+        for slot, available in available_slots.items():
+            if available:
+                for classroom in self.days[slot[0]][slot[1]]:    
+                    if self.days[slot[0]][slot[1]][classroom] is None and old_classroom != classroom\
+                        and classroom in self.schedule_data.classrooms[classroom].classes_allowed\
+                        and not Professor.already_teaching_in_interval(professor, self.days, slot[0], slot[1]):
                         # case when the classroom is different
                         
                         # case when the classroom is not full and number of students from old classroom is less than the capacity
@@ -375,18 +374,22 @@ class Schedule:
                             self.days[slot[0]][slot[1]][classroom] = (professor, course)
                             assigned, left_students = self.try_to_assign_left_students(course, left_to_assign)
                             if left_students:
-                                assigned = self.try_assign_left_students_non_empty_slots(course) 
+                                assigned = self.try_assign_left_students_empty_slots(course) 
                             else:
                                 assigned = True  
                 if assigned:
                     break
             if assigned:
                 break
-        
+            
+        # case when professors are different
         for slot, available in available_slots.items():
             if available:
                 for classroom in self.days[slot[0]][slot[1]]:
-                    if self.days[slot[0]][slot[1]][classroom] and self.days[slot[0]][slot[1]][classroom][1] == course:
+                    if self.days[slot[0]][slot[1]][classroom] and self.days[slot[0]][slot[1]][classroom][1] == course\
+                        and self.days[slot[0]][slot[1]][classroom][0] != professor and\
+                        not Professor.already_teaching_in_interval(professor, self.days, slot[0], slot[1]):
+
                         old_professor = self.days[slot[0]][slot[1]][classroom][0]
                         self.days[old_day][old_interval][old_classroom] = None
                         self.days[slot[0]][slot[1]][classroom] = (professor, course)

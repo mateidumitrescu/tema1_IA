@@ -485,49 +485,28 @@ class Schedule:
         Computes the cost of transitioning from the current state to a successor state.
         The cost is based on changes to the assignment of professors to courses and classrooms, 
         as well as maintaining alignment with professor preferences.
-
-        Args:
-        - successor (Schedule): The successor state for comparison.
-
-        Returns:
-        - int: The calculated transition cost.
         """
         cost = 0
-        change_penalty = 10  # Penalize each change to encourage stability
+        change_penalty = 10 
 
-        # Compare each day and interval's assignments between the current state and the successor
         for day in self.days:
             for interval in self.days[day]:
                 for classroom in self.days[day][interval]:
                     current_assignment = self.days[day][interval].get(classroom)
                     successor_assignment = successor.days[day][interval].get(classroom)
 
-                    # If assignments are not the same, apply a penalty
                     if current_assignment != successor_assignment:
                         cost += change_penalty
 
-                        # Further analysis could be added here, such as penalizing based on professor preferences
                         if successor_assignment:
                             professor, course = successor_assignment
-                            # Apply a higher cost if the assignment violates the professor's preferences
                             if not self.meets_professor_preferences(professor, day, interval):
-                                cost += 5  # Adjust this value based on how strict you want to enforce preferences
+                                cost += 5 
 
-        # This basic implementation can be extended to include more sophisticated cost analyses
         return cost
 
     def meets_professor_preferences(self, professor, day, interval):
-        """
-        Determine if a given time slot meets the specified professor's preferences.
-
-        Args:
-        - professor (str): The professor's identifier.
-        - day (str): The day of the week.
-        - interval (tuple): The time interval.
-
-        Returns:
-        - bool: True if the slot meets the preferences, False otherwise.
-        """
+        """Determine if a given time slot meets the specified professor's preferences."""
         # Assuming preferences are stored in a dictionary format or similar
         preferences = self.schedule_data.professors[professor].preferences
         return (day, interval) in preferences

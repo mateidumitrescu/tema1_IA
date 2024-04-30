@@ -7,6 +7,8 @@ from classroom import Classroom
 from hc import HillClimbing
 from astar import AStar
 from check_constraints import check_optional_constraints, check_mandatory_constraints
+import os
+import time
         
 
 def parse_input_file(input_file: str):
@@ -50,23 +52,32 @@ if __name__ == '__main__':
     input_file = sys.argv[2]
 
     schedule_data = parse_input_file(input_file)
+    
+    if os.path.exists('output.txt'):
+        os.remove('output.txt')
+    
 
     # check arguments
     if algo == 'astar':
         initial_state = Schedule(schedule_data)
         initial_state.create_initial_state()
+        start_time = time.time()
         result, best_cost = AStar.algorithm(initial_state, input_file)
         
         if len(result) > 0:
-            print(check_optional_constraints(initial_state.days, initial_state.specs))
-            print(check_mandatory_constraints(result[-1].days, initial_state.specs))
-            print(check_optional_constraints(result[-1].days, initial_state.specs))
-            print(pretty_print_timetable(result[-1].days, input_file))
+            best_cost = check_optional_constraints(result[-1].days, initial_state.specs)
+            print(best_cost)
+            with open('output.txt', 'w') as file:
+                file.write(pretty_print_timetable(result[-1].days, input_file))
+                file.write(f'\nCost: {best_cost}')
+                file.write(f'\nExecution time: {time.time() - start_time}')
         else:
-            print("No solution found")
+            with open('output.txt', 'w') as file:
+                file.write("No solution found")
         
     elif algo == 'hc':
-        HillClimbing.random_restart_hill_climbing(input_file=input_file, schedule_data=schedule_data)
+        start_time = time.time()
+        HillClimbing.random_restart_hill_climbing(start_time, input_file=input_file, schedule_data=schedule_data)
         # pretty_print_timetable(schedule.days, input_file)
         
 

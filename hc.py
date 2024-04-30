@@ -2,6 +2,7 @@ from schedule import Schedule
 from schedule_data import ScheduleData
 from check_constraints import check_optional_constraints, pretty_print_timetable
 import sys
+import time
 
 class HillClimbing:
 
@@ -25,7 +26,7 @@ class HillClimbing:
         #print("Violated constraints: ", schedule.violated_constraints)               
         return cost
     
-    def __hill_climbing(initial_state: Schedule, input_file: str, max_iters = 1000):
+    def __hill_climbing(initial_state: Schedule, input_file: str, max_iters = 5000):
         """Hill climbing algorithm used in random restart hill climbing algorithm"""
         iters = 0
         current_state = initial_state
@@ -55,9 +56,10 @@ class HillClimbing:
     
     @staticmethod
     def random_restart_hill_climbing(
+    start_time: float,
     input_file: str,
     schedule_data: ScheduleData,
-    max_restarts: int = 5000,
+    max_restarts: int = 500,
     max_iterations: int = 5000):
 
         """Random restart hill climbing algorithm"""
@@ -88,3 +90,8 @@ class HillClimbing:
         print("Reached limit of iterations!")
         print("Final cost: ", best_cost)
         print("Total iterations: ", total_iters)
+        elapsed_time = time.time() - start_time
+        with open('output.txt', 'w') as file:
+            file.write(pretty_print_timetable(best_state.days, input_file))
+            file.write(f'\nCost: {best_cost}')
+            file.write(f'\nElapsed time: {elapsed_time}')
